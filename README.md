@@ -1,140 +1,72 @@
-function confirmCancelRITM() {
-  // evita criar mais de um modal se o usuário clicar várias vezes
-  if (document.getElementById('confirmCancelRITMModal')) return;
 
-  // cria overlay
-  var overlay = document.createElement('div');
-  overlay.id = 'confirmCancelRITMOverlay';
-  overlay.style.position = 'fixed';
-  overlay.style.top = 0;
-  overlay.style.left = 0;
-  overlay.style.width = '100%';
-  overlay.style.height = '100%';
-  overlay.style.background = 'rgba(0,0,0,0.45)';
-  overlay.style.zIndex = 9999;
-  overlay.style.display = 'flex';
-  overlay.style.alignItems = 'center';
-  overlay.style.justifyContent = 'center';
-
-  // cria modal
-  var modal = document.createElement('div');
-  modal.id = 'confirmCancelRITMModal';
-  modal.style.width = '420px';
-  modal.style.maxWidth = '90%';
-  modal.style.background = '#fff';
-  modal.style.borderRadius = '8px';
-  modal.style.boxShadow = '0 6px 24px rgba(0,0,0,0.3)';
-  modal.style.padding = '20px';
-  modal.style.fontFamily = 'Arial, sans-serif';
-  modal.style.color = '#222';
-
-  // conteúdo
-  var title = document.createElement('h3');
-  title.innerText = 'Confirmação de Cancelamento';
-  title.style.margin = '0 0 10px 0';
-  title.style.fontSize = '18px';
-
-  var message = document.createElement('p');
-  message.innerText = 'Tem certeza que deseja cancelar esta RITM?';
-  message.style.margin = '0 0 20px 0';
-  message.style.fontSize = '14px';
-
-  // botões
-  var btnContainer = document.createElement('div');
-  btnContainer.style.display = 'flex';
-  btnContainer.style.justifyContent = 'flex-end';
-  btnContainer.style.gap = '8px';
-
-  var cancelBtn = document.createElement('button');
-  cancelBtn.type = 'button';
-  cancelBtn.innerText = '❌ Cancelar';
-  cancelBtn.style.padding = '8px 12px';
-  cancelBtn.style.border = '1px solid #bbb';
-  cancelBtn.style.borderRadius = '6px';
-  cancelBtn.style.background = '#fff';
-  cancelBtn.style.cursor = 'pointer';
-
-  var confirmBtn = document.createElement('button');
-  confirmBtn.type = 'button';
-  confirmBtn.innerText = '✅ Confirmar';
-  confirmBtn.style.padding = '8px 12px';
-  confirmBtn.style.border = 'none';
-  confirmBtn.style.borderRadius = '6px';
-  confirmBtn.style.background = '#d9534f'; // tom de "destructive"
-  confirmBtn.style.color = '#fff';
-  confirmBtn.style.cursor = 'pointer';
-
-  // acessibilidade: foco no botão confirmar
-  confirmBtn.autofocus = true;
-
-  btnContainer.appendChild(cancelBtn);
-  btnContainer.appendChild(confirmBtn);
-
-  modal.appendChild(title);
-  modal.appendChild(message);
-  modal.appendChild(btnContainer);
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
-
-  // função para remover modal
-  function removeModal() {
-    var o = document.getElementById('confirmCancelRITMOverlay');
-    if (o) o.parentNode.removeChild(o);
-  }
-
-  // handlers
-  cancelBtn.addEventListener('click', function () {
-    removeModal();
-    if (typeof gsftMain !== 'undefined') {
-      gsftMain.clearMessages();
-      gsftMain.addInfoMessage('Ação de cancelamento cancelada.');
-    }
-  });
-
-  confirmBtn.addEventListener('click', function () {
-    // desabilita botões enquanto processa
-    confirmBtn.disabled = true;
-    cancelBtn.disabled = true;
-    confirmBtn.innerText = 'Processando...';
-
-    // chama o Script Include via GlideAjax
-    try {
-      var ga = new GlideAjax('CancelRITMUtils');
-      ga.addParam('sysparm_name', 'cancelRITM');
-      ga.addParam('sysparm_sys_id', g_form.getUniqueValue());
-      ga.getXMLAnswer(function (response) {
-        removeModal();
-        if (response && response.toLowerCase().indexOf('sucesso') !== -1) {
-          if (typeof gsftMain !== 'undefined') {
-            gsftMain.clearMessages();
-            gsftMain.addInfoMessage('✅ RITM cancelada com sucesso!');
-          } else {
-            alert('RITM cancelada com sucesso!');
-          }
-        } else {
-          if (typeof gsftMain !== 'undefined') {
-            gsftMain.clearMessages();
-            gsftMain.addErrorMessage('❌ Erro ao cancelar a RITM: ' + response);
-          } else {
-            alert('Erro ao cancelar a RITM: ' + response);
-          }
+function onLoad() {
+    // Função para abrir o modal - será chamada pela UI Action
+    window.openCancelModal = function() {
+        var ritmNumber = g_form.getDisplayValue('number');
+        var ritmShortDescription = g_form.getDisplayValue('short_description');
+        
+        var modal = new GlideModal('cancel_ritm_modal', true);
+        modal.setTitle('Confirmar Cancelamento do RITM');
+        modal.setWidth(500);
+        
+        var content = 
+            '<div style="padding: 20px;">' +
+                '<div class="alert alert-warning">' +
+                    '<strong>Atenção!</strong> Esta ação não pode ser desfeita.' +
+                '</div>' +
+                '<div style="margin: 15px 0;">' +
+                    '<p><strong>RITM:</strong> ' + ritmNumber + '</p>' +
+                    '<p><strong>Item:</strong> ' + ritmShortDescription + '</p>' +
+                '</div>' +
+                '<div style="background-color: #f8f9fa; padding: 15px; border-radius: 4px; margin: 15px 0;">' +
+                    '<p style="margin: 0; color: #721c24;"><strong>Confirma o cancelamento deste item de requisição?</strong></p>' +
+                '</div>' +
+                '<div style="text-align: right; margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd;">' +
+                    '<button class="btn btn-default" onclick="GlideModal.get().destroy();" style="margin-right: 10px;">' +
+                        '<span class="icon icon-undo"></span> Voltar' +
+                    '</button>' +
+                    '<button class="btn btn-danger" onclick="confirmRITMCancel();">' +
+                        '<span class="icon icon-check"></span> Confirmar Cancelamento' +
+                    '</button>' +
+                '</div>' +
+            '</div>';
+        
+        modal.renderWithContent(content);
+    };
+    
+    // Função para confirmar o cancelamento
+    window.confirmRITMCancel = function() {
+        try {
+            // Fechar o modal
+            GlideModal.get().destroy();
+            
+            // Mostrar mensagem de processamento
+            g_form.addInfoMessage('Processando cancelamento...');
+            
+            // Alterar o state para 7 (Cancelado)
+            g_form.setValue('state', '7');
+            
+            // Adicionar comentário padrão
+            var currentComments = g_form.getValue('comments');
+            var cancelComment = '\n\n[RITM Cancelado via Interface - ' + new GlideDateTime().getDisplayValue() + ']';
+            
+            if (currentComments) {
+                g_form.setValue('comments', currentComments + cancelComment);
+            } else {
+                g_form.setValue('comments', 'RITM cancelado pelo usuário.' + cancelComment);
+            }
+            
+            // Salvar o formulário
+            g_form.save().then(function(response) {
+                if (response && response.isSuccessful()) {
+                    g_form.addInfoMessage('RITM cancelado com sucesso!');
+                } else {
+                    g_form.addErrorMessage('Erro ao cancelar RITM. Tente novamente.');
+                }
+            });
+            
+        } catch (error) {
+            g_form.addErrorMessage('Erro ao processar cancelamento: ' + error.message);
         }
-        // recarrega para refletir alterações
-        try { g_form.reload(); } catch (e) { /* ignore */ }
-      });
-    } catch (err) {
-      removeModal();
-      alert('Erro ao iniciar cancelamento: ' + err.message);
-    }
-  });
-
-  // fecha com ESC
-  function escHandler(evt) {
-    evt = evt || window.event;
-    if (evt.key === 'Escape') {
-      removeModal();
-      document.removeEventListener('keydown', escHandler);
-    }
-  }
-  document.addEventListener('keydown', escHandler);
+    };
 }
