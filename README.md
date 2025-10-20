@@ -136,3 +136,63 @@ function onClick() {
     
     return false; // Importante: prevenir submit do formulário
 }
+------- dai -----
+function onClick() {
+    // Para UI Actions com show update, precisamos de abordagem diferente
+    if (typeof g_form != 'undefined') {
+        // Abrir modal diretamente
+        openCancelModalNow();
+    }
+    
+    // Sempre retornar false para prevenir reload
+    return false;
+}
+
+function openCancelModalNow() {
+    var ritmNumber = g_form.getDisplayValue('number');
+    var ritmShortDescription = g_form.getDisplayValue('short_description');
+    
+    var modal = new GlideModal('cancel_ritm_modal');
+    modal.setTitle('Confirmar Cancelamento do RITM');
+    modal.setWidth(500);
+    
+    var content = 
+        '<div style="padding: 20px;">' +
+            '<div class="alert alert-warning">' +
+                '<strong>Atenção!</strong> Esta ação não pode ser desfeita.' +
+            '</div>' +
+            '<div style="margin: 15px 0;">' +
+                '<p><strong>RITM:</strong> ' + ritmNumber + '</p>' +
+                '<p><strong>Item:</strong> ' + ritmShortDescription + '</p>' +
+            '</div>' +
+            '<div style="text-align: center; margin: 20px 0;">' +
+                '<button class="btn btn-default" onclick="GlideModal.get().destroy();" style="margin-right: 10px; padding: 8px 20px;">' +
+                    'Voltar' +
+                '</button>' +
+                '<button class="btn btn-danger" onclick="confirmCancelNow();" style="padding: 8px 20px;">' +
+                    'Confirmar Cancelamento' +
+                '</button>' +
+            '</div>' +
+        '</div>';
+    
+    modal.renderWithContent(content);
+    
+    window.confirmCancelNow = function() {
+        // Fechar modal
+        GlideModal.get().destroy();
+        
+        // Mudar estado e salvar
+        g_form.setValue('state', '7');
+        
+        // Forçar save imediato
+        g_form.save().then(function(response) {
+            if (response && response.isSuccessful()) {
+                g_form.addInfoMessage('RITM cancelado com sucesso!');
+                // Recarregar para atualizar interface
+                setTimeout(function() {
+                    location.reload();
+                }, 1500);
+            }
+        });
+    };
+}
