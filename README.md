@@ -196,3 +196,29 @@ function openCancelModalNow() {
         });
     };
 }
+______ eu----
+
+function onClick() {
+    var ritmNumber = g_form.getDisplayValue('number');
+    
+    if (confirm('Tem certeza que deseja cancelar o RITM ' + ritmNumber + '?\n\nEsta ação não pode ser desfeita.')) {
+        // Mostrar processamento
+        g_form.addInfoMessage('🔄 Cancelando RITM...');
+        
+        // Alterar state para 7
+        g_form.setValue('state', '7');
+        
+        // Adicionar comentário
+        var comments = g_form.getValue('comments') || '';
+        g_form.setValue('comments', comments + '\n[Cancelado em ' + new GlideDateTime().getDisplayValue() + ']');
+        
+        // Salvar
+        g_form.save().then(function(response) {
+            if (response && response.isSuccessful()) {
+                g_form.addInfoMessage('✅ RITM cancelado com sucesso!');
+            }
+        });
+    }
+    
+    return false; // Prevenir reload
+}
